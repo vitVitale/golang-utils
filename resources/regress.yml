@@ -1,0 +1,41 @@
+---
+epic: Pilot ST Coverage
+feature: Regress I
+
+tests:
+  - name: Тест с источником аргументов из файла
+    tags: ['DB_required', 'useless']
+    test_data_from_csv:
+      file: test_data_from_file.csv
+      delimiter: ;
+      from: 38
+      to: 45
+    steps:
+      - command: Выполнить запрос на изменение в БД-localDB
+        allure_step: Запишем параметры в БД
+        params:
+          text: |-
+            INSERT INTO salute_assistant(user_id, query_phrase, pronounce_text, scenario, intent)
+            VALUES ('{{ userId }}', '{{ query }}', '{{ pronounceText }}', '{{ scenario }}', '{{ intent }}');
+          expected: 'ONLY WITH CHANGES'
+
+
+  - name: Проверка ендпоинта /new - (создание клиента)
+    tags: ['DB_required', 'covering_test']
+    test_data:
+      - { status: '201', answer: 'Создан клиент: стр. № \d+' }
+    steps:
+      - command: Отправить запрос REST-SomeControllerAPI
+        params:
+          text: |-
+            curl -X POST '{{ BASE_PATH SomeControllerAPI }}/some/new' \
+            -H 'Content-Type: application/json' \
+            -H 'accept: */*' \
+            -d '{"clientName":"Vitale","hobbies":"eat","mainGreeting":"Hi =)"}'
+          expected: 'HTTP CODE: {{ status }}'
+      - command: Проверяем значение поля ответа
+        params:
+          text: |-
+            STRUCT : RS_1
+          expected: 'REGEX {{ answer }}'
+
